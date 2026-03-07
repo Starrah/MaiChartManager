@@ -212,6 +212,8 @@ export default defineComponent({
       }
     }
 
+    let qwqbuffer: FileSystemDirectoryHandle;
+
     startProcess = async (dir?: FileSystemDirectoryHandle | FileSystemDirectoryHandle[]) => {
       let id = getNextUnusedMusicId();
       const usedIds = [] as number[];
@@ -222,10 +224,14 @@ export default defineComponent({
       currentProcessing.value = dummyMeta;
       try {
         if (!dir) {
-          dir = await window.showDirectoryPicker({
-            id: 'maidata-dir',
-            startIn: 'downloads',
-          });
+          if (qwqbuffer) dir = qwqbuffer
+          else {
+            dir = await window.showDirectoryPicker({
+              id: 'maidata-dir',
+              startIn: 'downloads',
+            });
+            qwqbuffer = dir
+          }
         }
         step.value = STEP.checking;
 
@@ -276,7 +282,7 @@ export default defineComponent({
       }
     }
 
-    return () => <Button onClick={() => startProcess()} variant="secondary">
+    return () => <Button onClick={() => startProcess()} variant="secondary" data-testid="import-chart-btn">
       {t('chart.import.title')}
       <SelectFileTypeTip show={step.value === STEP.selectFile} closeModal={closeModal} />
       <CheckingModal title={t('chart.import.checkingTitle')} show={step.value === STEP.checking} closeModal={closeModal} />

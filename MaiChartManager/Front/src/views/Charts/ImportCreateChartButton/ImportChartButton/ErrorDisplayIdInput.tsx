@@ -75,7 +75,7 @@ export default defineComponent({
       </div>,
         actions: () => <>
           <Button class="w-0 grow" onClick={() => show.value = false}>{props.meta.length ? t('common.cancel') : t('common.close')}</Button>
-          {!!props.meta.length && <Button class="w-0 grow" onClick={props.proceed}>{t('purchase.continue')}</Button>}
+          {!!props.meta.length && <Button data-testid="continue" class="w-0 grow" onClick={props.proceed}>{t('purchase.continue')}</Button>}
         </>
     }}</Modal>;
   }
@@ -98,7 +98,7 @@ const MusicIdInput = defineComponent({
       <img src={img.value} class="h-16 w-16 object-fill shrink-0"/>
       <div class="w-0 grow">{props.meta.name}</div>
       <MusicIdConflictNotifier id={props.meta.id}/>
-      <NumberInput v-model:value={props.meta.id} min={dxBase.value + 1} max={dxBase.value + 1e4 - 1} step={1} class="shrink-0"/>
+      <NumberInput data-testid="id-edit" v-model:value={props.meta.id} min={dxBase.value + 1} max={dxBase.value + 1e4 - 1} step={1} class="shrink-0"/>
     </div>
   }
 })

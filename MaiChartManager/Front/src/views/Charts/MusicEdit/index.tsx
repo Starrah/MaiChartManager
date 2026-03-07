@@ -74,7 +74,7 @@ const Component = defineComponent({
             <img src={info.value.id! >= 1e4 ? dxIcon : stdIcon} class="h-6"/>
             <div class="c-gray-5">
               <span class="op-70">ID: </span>
-              <span class="select-text">{info.value.id}</span>
+              <span class="select-text" data-testid="id-display">{info.value.id}</span>
             </div>
           </div>
 

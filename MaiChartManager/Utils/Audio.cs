@@ -61,6 +61,7 @@ public static class Audio
     {
         using WaveStream reader = isOgg ? new NAudio.Vorbis.VorbisWaveReader(src, true) : new StreamMediaFoundationReader(src);
         var sample = reader.ToSampleProvider();
+        Console.WriteLine($"convertToWav: padding: {padding}");
 
         switch (padding)
         {
@@ -76,9 +77,31 @@ public static class Audio
                 break;
         }
 
+        // --------------- NEW: read all samples into a float[] and reconstruct provider ---------------
+        // 这样可以准确知道已经读取到的 sample 数量（单通道数）以及帧数（frame = samples/channels）
+        var wf = sample.WaveFormat;
+
+        var tempBuf = new float[30000000];
+        var samplesList = new List<float>();
+        int read;
+        while ((read = sample.Read(tempBuf, 0, tempBuf.Length)) > 0)
+        {
+            for (int i = 0; i < read; i++)
+                samplesList.Add(tempBuf[i]);
+        }
+
+        long totalSamples = samplesList.Count; // 单通道样本点数总和
+        long sampleFrames = wf.Channels == 0 ? 0 : totalSamples / wf.Channels;
+
+        Console.WriteLine($"convertToWav: sample length after padding: {sampleFrames} frames, {totalSamples} samples, format: {wf}");
+
+        // 用读到的数组重新构造一个 ISampleProvider 以继续原来的写入逻辑
+        var sampleArray = samplesList.ToArray();
+        var arrayProvider = new ArraySampleProvider(sampleArray, wf);
+
         var stream = new MemoryStream();
-        WaveFileWriter.WriteWavFileToStream(stream, sample.ToWaveProvider16()); // 淦
-        stream.Position = 0;                                                    // 淦 x2
+        WaveFileWriter.WriteWavFileToStream(stream, arrayProvider.ToWaveProvider16()); // 使用重建后的 provider 写入
+        stream.Position = 0;
         return stream;
     }
 
@@ -157,5 +180,32 @@ public static class Audio
         // 创建 MP3 文件并编码
         using var writer = new LameMP3FileWriter(mp3Path, reader.WaveFormat, 256);
         reader.CopyTo(writer);
+    }
+
+    // A lightweight ISampleProvider that reads from a float[] buffer
+    private class ArraySampleProvider : ISampleProvider
+    {
+        private readonly float[] _data;
+        private int _position;
+        public WaveFormat WaveFormat { get; }
+
+        public ArraySampleProvider(float[] data, WaveFormat waveFormat)
+        {
+            _data = data ?? Array.Empty<float>();
+            WaveFormat = waveFormat;
+            _position = 0;
+        }
+
+        public int Read(float[] buffer, int offset, int count)
+        {
+            if (_position >= _data.Length)
+                return 0;
+
+            int available = _data.Length - _position;
+            int toCopy = Math.Min(available, count);
+            Array.Copy(_data, _position, buffer, offset, toCopy);
+            _position += toCopy;
+            return toCopy;
+        }
     }
 }

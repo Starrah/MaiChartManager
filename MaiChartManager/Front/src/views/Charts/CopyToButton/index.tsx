@@ -1,7 +1,7 @@
 import { computed, defineComponent, ref } from "vue";
 import api, { getUrl, isWebView } from "@/client/api";
 import { globalCapture, selectedADir, selectedMusic, selectMusicId, showNeedPurchaseDialog, version } from "@/store/refs";
-import { DropMenu, addToast } from "@munet/ui";
+import {DropMenu, addToast, Button} from "@munet/ui";
 import { BlobWriter, ZipReader } from "@zip.js/zip.js";
 import ChangeIdDialog from "./ChangeIdDialog";
 import getSubDirFile from "@/utils/getSubDirFile";
@@ -26,16 +26,22 @@ export default defineComponent({
       a.click();
     };
 
+    let qwqbuffer: FileSystemDirectoryHandle
+
     const copy = async (type: CopyType) => {
       wait.value = true;
       if (!isWebView || type === CopyType.exportMaidata || type === CopyType.exportMaidataIgnoreVideo) {
         // 浏览器模式，使用 zip.js 获取并解压
         let folderHandle: FileSystemDirectoryHandle;
         try {
-          folderHandle = await window.showDirectoryPicker({
-            id: 'copyToSaveDir',
-            mode: 'readwrite'
-          });
+          if (qwqbuffer) folderHandle = qwqbuffer
+          else {
+            folderHandle = await window.showDirectoryPicker({
+              id: 'copyToSaveDir',
+              mode: 'readwrite'
+            });
+            qwqbuffer = folderHandle
+          }
         } catch (e) {
           wait.value = false;
           console.log(e)
@@ -145,6 +151,9 @@ export default defineComponent({
 
     return () =>
       <div class="flex">
+        <Button data-testid="export-chart-btn" onClick={() => copy(CopyType.exportMaidata)} variant="secondary">
+          {t('copy.exportMaidata')}
+        </Button>
         <DropMenu options={options.value} buttonText={t('copy.copyAndExport')}>
         </DropMenu>
         <ChangeIdDialog v-model:show={showChangeId.value}/>
