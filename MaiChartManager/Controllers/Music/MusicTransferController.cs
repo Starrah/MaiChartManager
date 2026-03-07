@@ -643,6 +643,8 @@ public class MusicTransferController(StaticSettings settings, ILogger<MusicTrans
 
         AudioConvert.ConvertWavPathToMp3Stream(wavPath, soundStream, tag);
         soundStream.Close();
+        
+        zipArchive.CreateEntryFromFile(wavPath, "track.wav");
 
         if (!ignoreVideo && StaticSettings.MovieDataMap.TryGetValue(music.NonDxId, out var movieUsmPath))
         {

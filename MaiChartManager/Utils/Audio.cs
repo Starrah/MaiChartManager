@@ -61,6 +61,7 @@ public static class Audio
     {
         using WaveStream reader = isOgg ? new NAudio.Vorbis.VorbisWaveReader(src, true) : new StreamMediaFoundationReader(src);
         var sample = reader.ToSampleProvider();
+        Console.WriteLine($"convertToWav: padding: {padding}");
 
         switch (padding)
         {
@@ -78,6 +79,11 @@ public static class Audio
 
         var stream = new MemoryStream();
         WaveFileWriter.WriteWavFileToStream(stream, sample.ToWaveProvider16()); // 淦
+        
+        // 把wav的内容写到本地文件以供调试
+        stream.Position = 0;
+        System.IO.File.WriteAllBytes("D:\\tmp\\xxx\\importing.wav", stream.ToArray());
+        
         stream.Position = 0;                                                    // 淦 x2
         return stream;
     }
